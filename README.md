@@ -1,13 +1,6 @@
-# NYC Taxi Fare Prediction
+# Taxi Fare Prediction
 
 A Machine Learning application that predicts NYC taxi fares using a Random Forest model, served via FastAPI, with a Streamlit frontend, PostgreSQL for storing predictions, and **Apache Airflow 3** for fully automated data pipelines — all orchestrated with Docker.
-
-## Group Members
-- Amruth Ganta
-- Amaan Syed
-- Nithya Niharika Kotcherla
-- Bhanu Prakash Kuncham
-- Vedant Rajput
 
 ---
 
