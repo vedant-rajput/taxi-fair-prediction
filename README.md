@@ -2,6 +2,13 @@
 
 A Machine Learning application that predicts NYC taxi fares using a Random Forest model, served via FastAPI, with a Streamlit frontend, PostgreSQL for storing predictions, and **Apache Airflow 3** for fully automated data pipelines — all orchestrated with Docker.
 
+## Group Members
+- Amruth Ganta
+- Amaan Syed
+- Nithya Niharika Kotcherla
+- Bhanu Prakash Kuncham
+- Vedant Rajput
+
 ---
 
 ## Project Structure
@@ -11,15 +18,12 @@ taxi-fare-prediction/
 ├── data/                        # All datasets
 │   ├── train.csv                # Main clean training dataset (gitignored)
 │   ├── raw/                     # Raw incoming CSV files (error-injected chunks)
-│   ├── good_data/               # Validated clean data that passed all tests
-│   └── bad_data/                # Invalid data that failed Great Expectations
-│
-├── .github/workflows/           # Automated CI/CD pipeline (Flake8 & Pytest)
-│   └── ci.yml
+│   ├── processed/               # Cleaned/validated data from ingestion DAG
+│   └── archived/                # Processed files that have been predicted & stored
 │
 ├── dags/                        # Apache Airflow 3 DAGs
-│   ├── ingestion_dag_dsp.py     # Validates via Great Expectations & splits data
-│   └── predict_taxi_fares.py    # Generates predictions & records state-tracking
+│   ├── ingestion_dag_dsp.py     # Cleans raw data and moves to processed/
+│   └── predict_taxi_fares.py    # Batches processed data to API and archives
 │
 ├── logs/                        # Airflow task execution logs
 ├── plugins/                     # Airflow custom plugins
@@ -58,11 +62,8 @@ taxi-fare-prediction/
 
 Our project implements a continuous, automated ETL & Inference pipeline via **Airflow 3**:
 
-1. **Ingestion (`ingest_taxi_data` DAG)**: Runs dynamically on a schedule. It selects fresh files from `data/raw/` and rigorously evaluates them utilizing **Great Expectations v1**. Valid rows are outputted into `data/good_data/`, and broken rows are isolated in `data/bad_data/`. It additionally writes analytics to PostgreSQL and actively fires MS Teams alerts upon detecting critical issues!
-2. **Prediction (`predict_taxi_fares` DAG)**: Auto-detects whenever new clean files arrive in `data/good_data/`. It dispatches the clean properties to the FastAPI endpoints to generate model inferences, commits the results into PostgreSQL natively, and securely memorizes its processed history using purely invisible **Airflow Variables**—ensuring core files are perfectly preserved without ever being moved!
-
-### CI/CD Pipeline
-- **GitHub Actions (`.github/workflows/ci.yml`)**: Instantly triggers upon commits to `main` branch. Validates complete system code integrity via `Flake8` linting and prepares behavioral tests efficiently via `Pytest`!
+1. **Ingestion (`ingest_taxi_data` DAG)**: Runs every 5 minutes. Picks up raw data from `data/raw/`, cleans it (e.g., drops negative fares), and saves validated files to `data/processed/`.
+2. **Prediction (`predict_taxi_fares` DAG)**: Runs every 5 minutes. Reads clean files from `data/processed/`, sends the batch to the FastAPI endpoint (`/predict`), stores the predictions in PostgreSQL, and moves the finished file to `data/archived/` to prevent duplicate processing.
 
 ---
 
@@ -125,8 +126,7 @@ docker compose down
 | Category | Tools |
 |---|---|
 | Machine Learning | Python, Scikit-learn, Pandas, NumPy |
-| Data Ops / Orchestration | Apache Airflow 3, Docker Compose |
-| Data Quality / Testing | Great Expectations v1, Pytest, Flake8, GitHub Actions |
+| Orchestration | Apache Airflow 3, Docker Compose |
 | Backend API | FastAPI, Uvicorn, SQLAlchemy |
 | Database | PostgreSQL 15 |
 | Frontend | Streamlit |
